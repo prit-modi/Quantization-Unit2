@@ -57,16 +57,17 @@ class Net(nn.Module):
         return F.log_softmax(x, dim=1)
 
 def quantize_model(model, optimizer):
-#   config_list = [{
-#     'quant_types': ['weight'],
-#     'quant_bits': {'weight': 8},
-#     'op_types': ['Conv2d']
-# }, 
-#     {
-#     'quant_types': ['weight'],
-#     'quant_bits': {'weight': 8},
-#     'op_names': ['fc1']
-# }]
+
+  config_list_1 = [{
+    'quant_types': ['input', 'weight'],
+    'quant_bits': {'input': 8, 'weight': 8},
+    'op_types': ['Conv2d']
+}, 
+    {
+    'quant_types': ['input', 'weight'],
+    'quant_bits': {'input': 8, 'weight': 8},
+    'op_names': ['fc1']
+}]
 
   
   dummy_input = torch.rand(32, 1, 28, 28).to(device)
@@ -77,7 +78,13 @@ def quantize_model(model, optimizer):
         },
         'op_types':['Conv2d']
     }]
-  quantizer = BNNQuantizer(model, config_list, optimizer)
+  if args.quantizer == 'QATQuantizer':
+    quantizer = QAT_Quantizer(model, config_list_1, optimizer, dummy_input)
+  elif args.quantizer == 'DoReFaQuantizer':
+    quantizer = DoReFaQuantizer(model, config_list, optimizer)
+  else:
+    quantizer = BNNQuantizer(model, config_list, optimizer)
+   
   quantizer.compress()
   print(quantizer)
   print(model)
